@@ -5,11 +5,15 @@
 	À l’exécution sur votre machine virtuelle, la fonction affiche un menu
 		interactif permettant de choisir le disque parmi une liste des disques
 		disponibles.
-#>
+#> 
+
+# ---------------------------------------------------------[ SCRIPT VARIABLE.S ]
 
 $script:disk_classname = [string]'CIM_LogicalDisk'
 $script:menu	= [PSCustomObject]@{
 	frame		= [PSCustomObject]@{
+		sep_horizontal	= `
+"+-----------------------------------------------------------------------------"
 		header		= "Espace disque disponible"
 		footer		= "Exercice 2 - Fonction PowerShell"
 		directions	= "Veuillez selectionner un disque"
@@ -27,22 +31,25 @@ $script:menu	= [PSCustomObject]@{
 	}
 }
 
+# ----------------------------------------------------------------[ FUNCTION.S ]
+# ----------------------------------------[ MENU ]
+
 function Show-Menu() {
 	param(
 		[Parameter(Mandatory=$true)]
 		[string[]]$options
 	)
 	Clear-Host
-	Write-Host "+--------------------------------------------------------------"
-	Write-Host "| " $menu.frame.header.ToUpper()
-	Write-Host "| " $menu.frame.directions
-	Write-Host "+--------------------------------------------------------------"
+	Write-Host $script:menu.frame.sep_horizontal
+	Write-Host "| " $script:menu.frame.header.ToUpper()
+	Write-Host "| " $script:menu.frame.directions
+	Write-Host $script:menu.frame.sep_horizontal
 	$n_options = $options.Count
 	for ($i = 0; $i -lt $n_options; $i++) {
 		Write-Host "| [$($i + 1)]`t$(${options}[$i])"
 	}
-	Write-Host "+--------------------------------------------------------------"
-	$user_input = Read-Host "| $(${menu}.prompts.select)"
+	Write-Host $script:menu.frame.sep_horizontal
+	$user_input = Read-Host "| $(${script:menu}.prompts.select)"
 	$i = 0
 	if ( [int]::TryParse( $user_input, [ref]$i ) -ne $true ) {
 		return ''
@@ -70,13 +77,23 @@ function Error-Menu() {
 	Clear-Host
 }
 
+# ----------------------------------------[ DISK ]
+
 function Afficher-EspaceDisque() {
-	$logical_disks = (Get-CimInstance -ClassName "$script:disk_classname")
-	$options = [string[]]( $logical_disks | Where-Object { $_.DeviceID -ne '' } ).DeviceID
-	$options += $script:menu.options.quit
+#	$logical_disks = (Get-CimInstance -ClassName "$script:disk_classname")
+#	$options = [string[]](
+#		$logical_disks | Where-Object { $_.DeviceID -ne '' }
+#	).DeviceID
+#	$options += $script:menu.options.quit
 	$selection = ''
 	while ( $script:menu.state.display -eq $true ) {
 		$logical_disks = (Get-CimInstance -ClassName "$script:disk_classname")
+
+		$options = [string[]](
+			$logical_disks | Where-Object { $_.DeviceID -ne '' }
+		).DeviceID
+		$options += $script:menu.options.quit
+
 		$selection = Show-Menu -options $options
 		if ( $selection -eq $script:menu.options.quit ) {
 			Quit-Menu
@@ -84,17 +101,29 @@ function Afficher-EspaceDisque() {
 			Error-Menu -msg "veuillez saisir un nombre (index)"
 			continue
 		}
-		$selected_disk = $logical_disks | Where-Object { $_.DeviceID -match $selection }
-		$disk_size = [Math]::Round( $selected_disk.Size/[Math]::Pow(1024, 3), 2 )
-		$disk_free = [Math]::Round( $selected_disk.FreeSpace/[Math]::Pow(1024, 3), 2 )
+		$selected_disk = $logical_disks | Where-Object {
+			$_.DeviceID -match $selection
+		}
+		$disk_size = [Math]::Round(
+			$selected_disk.Size/[Math]::Pow( 1024, 3 ),
+			2
+		)
+		$disk_free = [Math]::Round(
+			$selected_disk.FreeSpace/[Math]::Pow( 1024, 3 ),
+			2
+		)
 		Clear-Host
-		Write-Host "Disque $($selected_disk.DeviceID) - Taille: ${disk_size} Go (Libre: ${disk_free} Go)"
+		Write-Host (
+			"Disque $($selected_disk.DeviceID) - " +
+			"Taille: ${disk_size} Go (Libre: ${disk_free} Go)"
+		)
 		$selection = ''
 		pause
 	}
 	return Clear-Host
 }
 
+# ----------------------------------------------------------------------[ MAIN ]
 function main() {
 	Afficher-EspaceDisque
 	return
