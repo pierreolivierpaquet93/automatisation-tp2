@@ -26,20 +26,27 @@ $script:menu	= [PSCustomObject]@{
 }
 
 function Show-Menu() {
+	param(
+		[Parameter(Mandatory=$true)]
+		[string[]]$options
+	)
 	Clear-Host
 	Write-Host "+=============================================================="
 	Write-Host "| " $menu.frame.header.ToUpper()
 	Write-Host "+=============================================================="
 	Write-Host "| " $menu.frame.directions
 	Write-Host "+--------------------------------------------------------------"
-
+	$n_options = $options.Count
+	for ($i = 0; $i -lt $n_options; $i++) {
+		Write-Host "| [$($i + 1)]`tDisque $(${options}[$i])"
+	}
 	return
 }
 
 function Afficher-EspaceDisque() {
 	$logical_disks = (Get-CimInstance -ClassName "$script:disk_classname")
-	$logical_disks
-	Show-Menu
+	$options = [string[]]($logical_disks | Select-Object -Property DeviceID).DeviceID
+	Show-Menu -options $options
 	return
 }
 
