@@ -43,6 +43,10 @@ function Show-Menu() {
 	}
 	Write-Host "+--------------------------------------------------------------"
 	$user_input = Read-Host "| $(${menu}.prompts.select)"
+	$i = 0
+	if ( [int]::TryParse( $user_input, [ref]$i ) -ne $true ) {
+		return ''
+	}
 	return $options[([int]$user_input - 1)]
 }
 
@@ -55,6 +59,17 @@ function Quit-Menu() {
 	exit( 0 )
 }
 
+function Error-Menu() {
+	param(
+		[Parameter(Mandatory=$true)]
+		[string]$msg
+	)
+	Clear-Host
+	Write-Host "erreur: ${msg}."
+	pause
+	Clear-Host
+}
+
 function Afficher-EspaceDisque() {
 	$logical_disks = (Get-CimInstance -ClassName "$script:disk_classname")
 	$options = [string[]]( $logical_disks | Where-Object { $_.DeviceID -ne '' } ).DeviceID
@@ -65,6 +80,9 @@ function Afficher-EspaceDisque() {
 		$selection = Show-Menu -options $options
 		if ( $selection -eq $script:menu.options.quit ) {
 			Quit-Menu
+		} elseif ( $selection -eq '' ) {
+			Error-Menu -msg "veuillez saisir un nombre (index)"
+			continue
 		}
 		$selected_disk = $logical_disks | Where-Object { $_.DeviceID -match $selection }
 		$disk_size = [Math]::Round( $selected_disk.Size/[Math]::Pow(1024, 3), 2 )
