@@ -7,8 +7,13 @@
 		disponibles.
 #>
 
+function Afficher-EspaceDisque() {
+	Write-Host "Afficher-EspaceDisque()"
+	return
+}
+
 function main() {
-	Write-Host "Exercice-02"
+	Afficher-EspaceDisque
 	return
 }
 
