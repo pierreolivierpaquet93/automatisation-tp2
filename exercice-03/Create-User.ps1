@@ -15,6 +15,7 @@
 .NOTES
 	- https://www.techtutsonline.com/get-motherboard-information-using-windows-powershell/#google_vignette
 	- https://stackoverflow.com/questions/69868053/how-can-i-get-the-number-of-cpu-cores-in-powershell
+	- https://www.tutorialpedia.org/blog/windows-11-how-to-check-graphics-card-in-1-minute/#query-the-graphics-card-with-powershell
 #>
 
 function Section-Title {
@@ -70,9 +71,21 @@ function Section-Processor {
 	return $section
 }
 
+function Section-Graphic {
+	$title				= Section-Title		-title		'CARTE GRAPHIQUE'
+	$video_controller	= Get-CimInstance	-ClassName	'Win32_VideoController'
+	
+	$section	= $title
+	$section	+= "Nom de la carte: $($video_controller.Name)`n"
+	$section	+= "Version des drivers: $($video_controller.DriverVersion)`n"
+
+	return $section
+}
+
 function main {
 	WRite-Host (Section-Motherboard)
 	WRite-Host (Section-Processor)
+	Write-Host (Section-Graphic)
 }
 
 main
