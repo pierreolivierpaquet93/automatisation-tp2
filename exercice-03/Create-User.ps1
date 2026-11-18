@@ -20,8 +20,6 @@
 
 function Section-Title {
 	param(
-		[Parameter(Mandatory=$true)]
-		[ValidateNotNullOrEmpty()]
 		[string]$title,
 		[string]$char	= '=',
 		[int]$width		= 80,
@@ -82,10 +80,27 @@ function Section-Graphic {
 	return $section
 }
 
+function Section-Disk {
+	$title		= Section-Title		-title		'DISQUE'
+	$hard_disks	= Get-CimInstance	-ClassName	"Win32_DiskDrive"
+	$section = $title
+	$first	= $true
+	foreach ($disk in $hard_disks) {
+		if ( -not $first ) {
+			$section += Section-Title -char '-' -width 50
+		} else { $first = $false }
+		$section	+= "Modele du disque: $($disk.model)`n"
+		$size = [Math]::round($disk.size/[Math]::Pow(1024,3),2 )
+		$section	+= "Taille en GB du disque: ${size}`n"
+	}
+	return $section
+}
+
 function main {
-	WRite-Host (Section-Motherboard)
-	WRite-Host (Section-Processor)
-	Write-Host (Section-Graphic)
+	#WRite-Host (Section-Motherboard)
+	#WRite-Host (Section-Processor)
+	#Write-Host (Section-Graphic)
+	Write-Host (Section-Disk)
 }
 
 main
