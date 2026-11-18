@@ -14,6 +14,7 @@
 	
 .NOTES
 	- https://www.techtutsonline.com/get-motherboard-information-using-windows-powershell/#google_vignette
+	- https://stackoverflow.com/questions/69868053/how-can-i-get-the-number-of-cpu-cores-in-powershell
 #>
 
 function Section-Title {
@@ -49,11 +50,29 @@ function Section-Motherboard {
 	$section	+= "Carte mere: $($board.product)`n"
 	$section	+= "Manufacturier de la carte mere: $($board.manufacturer)`n"
 	$section	+= "Version du bios: $($bios.Version)`n"
-	Write-Host $section
+
+	return $section
+}
+
+function Section-Processor {
+	$title				= Section-Title		-title		'PROCESSEUR'
+	$cpu				= Get-CimInstance	-ClassName	Win32_Processor
+	$cpu_name			= $cpu[0].Name
+	$n_core				= $cpu.NumberOfCores # Returns the number of core for each CPU
+	$cpu_manufacturer	= $cpu[0].Manufacturer
+	$total_core			= ($n_core | Measure-Object -Sum).sum
+
+	$section = $title
+	$section += "Nom du processeur: $cpu_name`n"
+	$section += "Manufacturier du processeur: ${cpu_manufacturer}`n"
+	$section += "Nombre de coeurs du processeur: ${total_core}`n"
+
+	return $section
 }
 
 function main {
-	Section-Motherboard
+	WRite-Host (Section-Motherboard)
+	WRite-Host (Section-Processor)
 }
 
 main
