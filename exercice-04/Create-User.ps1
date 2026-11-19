@@ -37,6 +37,10 @@ $script:max_len	= 25
 
 #-----------------------------------------------------------------[ FUNCTION.S ]
 
+# This function assumes that no user is being deleted.
+# It also assumes that the provided 'username' is regex ready/safe:
+#	ex: 'user.name' --> 'user\.name'
+# Returns the amount of user(s) that have the same name.
 function Existing-User {
 	param(
 		[Parameter(Mandatory=$true)]
