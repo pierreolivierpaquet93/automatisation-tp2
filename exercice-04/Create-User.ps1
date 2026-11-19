@@ -5,27 +5,37 @@
 	- https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/get-random?view=powershell-7.6
 	- https://stackoverflow.com/questions/56930864/check-if-an-string-exists-in-a-list-of-strings-using-powershell
 	- https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.localaccounts/add-localgroupmember?view=powershell-5.1
+	- https://learn.microsoft.com/en-us/powershell/scripting/learn/deep-dives/everything-about-shouldprocess?view=powershell-7.6
 #>
 
-$script:main_directory = 'C:\LeProgramme\'
-$script:description= "#automatisation-tp2"
-$script:password_policy = [PSCustomObject]@{
+param(
+	[string]$last_name	= 'paquet',
+	[string]$first_name	= 'pierre',
+	[string]$user_type	= 'Etudiant',
+	[string]$code		= 'ABCD1234'
+)
+
+#-----------------------------------------------------------------[ VARIABLE.S ]
+
+$script:main_directory	= 'C:\LeProgramme\'
+$script:description		= "#automatisation-tp2"
+$script:password_policy	= [PSCustomObject]@{
 	min	= 10000000
 	max	= 99999999
 }
-$script:max_len = 25
-
-[string[]]$script:user_types = @(
+$script:max_len	= 25
+[string[]]$script:user_types	= @(
 	'Enseignant',
 	'Etudiant',
 	'Personnel'
 )
-
 [string[]]$script:programs = @(
 	'Telecommunication',
 	'Gestion',
 	'Informatique'
 )
+
+#-----------------------------------------------------------------[ FUNCTION.S ]
 
 function Existing-User {
 	param(
@@ -108,16 +118,18 @@ function Create-User {
 		[string]$code
 	)
 	if (
-		(
-			Validate-Parameters `
-				-last_name $last_name `
-				-first_name $first_name `
-				-user_type $user_type
+		(Validate-Parameters `
+			-last_name $last_name `
+			-first_name $first_name `
+			-user_type $user_type
 		) -eq $false
 	) {
 		return
 	}
 	$username	= Create-Username -first_name $first_name -last_name $last_name
+	if ($PSCmdlet.ShouldProcess($username, "Creation de l'utilisateur et ajout au groupe '${user_type}'") -eq $false) {
+		return
+	}
 	Write-Debug "USERNAME=$username"
 	$password	= ''
 	if ($user_type -eq 'Etudiant') {
@@ -136,18 +148,30 @@ function Create-User {
 			-AsPlainText `
 			-Force
 	}
-	New-LocalUser -Name $username -Password $password -Description $script:description
-	Add-LocalGroupMember -Group $user_type -Member $username
+
+	New-LocalUser `
+		-Name			$username `
+		-Password		$password `
+		-Description	$script:description `
+		-Confirm:$false
+
+	Add-LocalGroupMember `
+		-Group	$user_type `
+		-Member	$username `
+		-Confirm:$false
+
 	Create-UserDirectory -username $username
 	return
 }
 
+#-----------------------------------------------------------------------[ MAIN ]
+
 function main {
 	Create-User `
-		-first_name	"pierre" `
-		-last_name	'paquet' `
-		-user_type	'Etudiant' `
-		-code		'abcd1234'
+		-first_name	$first_name `
+		-last_name	$last_name `
+		-user_type	$user_type `
+		-code		$code			-Confirm
 }
 
 main
