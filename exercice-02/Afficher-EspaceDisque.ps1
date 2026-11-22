@@ -80,6 +80,7 @@ function Error-Menu() {
 # ----------------------------------------[ DISK ]
 
 function Afficher-EspaceDisque() {
+	# Fetches disks information before the main loop.
 #	$logical_disks = (Get-CimInstance -ClassName "$script:disk_classname")
 #	$options = [string[]](
 #		$logical_disks | Where-Object { $_.DeviceID -ne '' }
@@ -87,8 +88,10 @@ function Afficher-EspaceDisque() {
 #	$options += $script:menu.options.quit
 	$selection = ''
 	while ( $script:menu.state.display -eq $true ) {
+		# Fetches disks information after each menu action.
 		$logical_disks = (Get-CimInstance -ClassName "$script:disk_classname")
 
+		# Builds the dynamic menu options (disks).
 		$options = [string[]](
 			$logical_disks | Where-Object { $_.DeviceID -ne '' }
 		).DeviceID
@@ -101,6 +104,7 @@ function Afficher-EspaceDisque() {
 			Error-Menu -msg "veuillez saisir un nombre (index)"
 			continue
 		}
+		# Maps the selected option with the corresponding disk.
 		$selected_disk = $logical_disks | Where-Object {
 			$_.DeviceID -match $selection
 		}
