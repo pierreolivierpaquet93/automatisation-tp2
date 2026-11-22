@@ -16,15 +16,7 @@
 	- https://www.techtutsonline.com/get-motherboard-information-using-windows-powershell/#google_vignette
 	- https://stackoverflow.com/questions/69868053/how-can-i-get-the-number-of-cpu-cores-in-powershell
 	- https://www.tutorialpedia.org/blog/windows-11-how-to-check-graphics-card-in-1-minute/#query-the-graphics-card-with-powershell
-	- https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getproductinfo
-	- https://techexpert.tips/powershell/powershell-converting-numbers-hexadecimal/
 #>
-
-[hashtable]$script:os_skus = @{
-	'0x00000079' = 'Windows 10 Education'
-	'0x00000004' = 'Windows 10 Enterprise'
-	'0x00000030' = 'Windows 10 Pro'
-}
 
 function Section-Title {
 	param(
@@ -111,8 +103,7 @@ function Section-OS {
 	$section	= $title
 	$section	+= "Systeme d'exploitation: $($os.Caption)`n"
 	$section	+= "Version du systeme d'exploitation: $($os.Version)`n"
-	$hex		= "0x{0:x8}" -f [int]$os.OperatingSystemSKU
-	$edition	= $script:os_skus["$hex"]
+	$edition	= (Get-ComputerInfo).WindowsEditionId 
 	$section	+= "Edition du systeme d'exploitation: $edition`n"
 
 	return $section
