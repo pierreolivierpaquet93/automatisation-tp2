@@ -12,12 +12,13 @@ param(
 	[string]$last_name	= 'paquet',
 	[string]$first_name	= 'pierre',
 	[string]$user_type	= 'Etudiant',
-	[string]$code		= 'ABCD1234'
+	[string]$code,
+	[string]$program	= ''
 )
 
 #-----------------------------------------------------------------[ VARIABLE.S ]
 
-$script:main_directory	= 'C:\LeProgramme\'
+$script:main_directory	= 'C:\programmes'
 $script:description		= "#automatisation-tp2"
 $script:password_policy	= [PSCustomObject]@{
 	min	= 10000000
@@ -76,10 +77,19 @@ function Validate-Parameters {
 	param(
 		[string]$last_name,
 		[string]$first_name,
-		[string]$user_type
+		[string]$user_type,
+		[string]$code,
+		[string]$program
 	)
 	if ($script:user_types -notcontains $user_type) {
 		Write-Error "${user_type} : invalid user type."
+		return $false
+	}
+	if (
+		$script:programs -notcontains $program -and `
+		$program -ne ''
+	){
+		Write-Error "${program}: invalid program."
 		return $false
 	}
 	if ($last_name.Length -gt $script:max_len) {
@@ -90,20 +100,34 @@ function Validate-Parameters {
 		Write-Error "${first_name} : too long."
 		return $false
 	}
+	if (
+		$user_type -eq 'Etudiant' -and `
+		$code -notmatch '^[a-zA-Z]{4}[0-9]{4}$'
+	){
+		Write-Error "'Etudiant' user needs a valid code for the account password."
+		return $false
+	}
 	return $true
 }
 
 function Create-UserDirectory {
+	[CmdletBinding(SupportsShouldProcess=$true)]
 	param(
 		[Parameter(Mandatory=$true)]
-		[string]$username
+		[string]$username,
+		[string]$program
 	)
 	if ( (Test-Path -Path $script:main_directory) -eq $false ) {
-		New-Item -ItemType Directory -Path $script:main_directory
+		$output = New-Item -ItemType Directory -Path $script:main_directory
 	}
-	$user_directory = Join-Path $script:main_directory -ChildPath $username
+	if ($program -eq '') {
+		$program = 'misc'
+	}
+	$child_path = Join-Path $program -ChildPath $username
+	$user_directory = Join-Path $script:main_directory -ChildPath $child_path
 	if ( (Test-Path -Path $user_directory) -eq $false ) {
-		New-Item -ItemType Directory -Path $user_directory
+		$output = New-Item -ItemType Directory -Path $user_directory
+		Write-Debug "Created '${user_directory}'."
 	}
 	return
 }
@@ -117,15 +141,16 @@ function Create-User {
 		[string]$first_name,
 		[Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()]
 		[string]$user_type,
-		[ValidateNotNullOrEmpty()]
-		[ValidatePattern('^[a-zA-Z]{4}[0-9]{4}$')]
-		[string]$code
+		[string]$code,
+		[string]$program
 	)
 	if (
 		(Validate-Parameters `
-			-last_name $last_name `
-			-first_name $first_name `
-			-user_type $user_type
+			-last_name	$last_name `
+			-first_name	$first_name `
+			-user_type	$user_type `
+			-code		$code `
+			-program	$program
 		) -eq $false
 	) {
 		return
@@ -138,8 +163,10 @@ function Create-User {
 	$password	= ''
 	if ($user_type -eq 'Etudiant') {
 		Write-Debug "PW=$code"
+		Write-Host "Etudiant: Pas besoin de modifier votre mot de passe lors de la premiere connexion."
 		$password	= (ConvertTo-SecureString $code -AsPlainText -Force)
 	} else {
+		Write-Host "${username}: Veuillez modifier votre mot de passe lors de la premiere connexion."
 		$rand = (
 				Get-Random `
 					-Minimum $script:password_policy.min `
@@ -153,18 +180,23 @@ function Create-User {
 			-Force
 	}
 
-	New-LocalUser `
+	$output = New-LocalUser `
 		-Name			$username `
 		-Password		$password `
 		-Description	$script:description `
 		-Confirm:$false
+	Write-Debug "Create new user: '${username}'."
 
-	Add-LocalGroupMember `
+	$output = Add-LocalGroupMember `
 		-Group	$user_type `
 		-Member	$username `
 		-Confirm:$false
+	Write-Debug "Added '${username}' to '${user_type}' group."
 
-	Create-UserDirectory -username $username
+	Create-UserDirectory `
+		-program	$program `
+		-username	$username `
+		-Confirm:$false
 	return
 }
 
@@ -175,6 +207,7 @@ function main {
 		-first_name	$first_name `
 		-last_name	$last_name `
 		-user_type	$user_type `
+		-program	$program `
 		-code		$code			-Confirm
 }
 
